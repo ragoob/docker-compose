@@ -1,0 +1,200 @@
+#      __
+#   __/_/\  _____ _____     _____
+#  /_/\_\/ |  _  |_   _|___|     |
+#  \_\/_/\ |     | | | | . | | | |
+#     \_\/ |__|__| |_| |___|_|_|_|
+#
+#          Aptar Terminal on Machine
+#
+
+version: "3.7"
+
+services:
+  redis:
+    image: registry.factory.aptargroup.biz/atom/admin/atom-redis:1.1.2
+    container_name: atom_redis_armv7l
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 100M
+        reservations:
+          cpus: "0.25"
+    restart: always
+    command: ["redis-server"]
+    expose:
+      - 6379
+    ports:
+      - 6379:6379
+    volumes:
+      - redis-data:/data
+    networks:
+      - atom0
+  nucleus:
+    image: registry.factory.aptargroup.biz/atom/admin/atom-nucleus:1.1.2
+    container_name: atom_nucleus_armv7l
+    
+    restart: always
+    environment:
+      - VERSION=1.1.2
+      - LANGUAGE=de
+      - REDIS=redis://redis:6379
+      - MACHINE_NAME=I2724
+      - MACHINE_TYPE=PRESS
+      - PLANT_ID=1111
+      - PLC_ID=999777
+      - PLC_LINKED=1
+      - PLC_ACK=0
+      - GAPI=http://172.22.172.140:3010
+      - MES=PEV
+      - PLC_IP=opc.tcp://SEIGOPC03.aptargroup.loc:49320
+      - TAG_PREFIX=ns=2;s=I2724.I2724.I2720_I2724.I2724
+      - POLLING_RATE=2000
+      - NUCLEUS_HOST=atom_nucleus
+      - SCRAP_VALUE_FROM_PLC=false
+      - CONSIDER_REJECTED_CAVITIES_FOR_OEE_CALCULATION=0
+      - TEAMS_CHANNEL=d108b20b.aptar.onmicrosoft.com@amer.teams.ms
+      - OEE_MAIL_TRIGGER=SETUP,MAINTENANCE
+      - SKIP_LOGIN=0
+      - KAFKA_ACTIVE=1
+      - NUCLEUS_SOCKETS=http://atom_nucleus:4000
+    depends_on:
+      - redis
+    links:
+      - redis
+      
+    command: ["npm", "run-script", "start"]
+    expose:
+      - 3000
+      - 4000
+    ports:
+      - 3000:3000
+      - 4000:4000
+    volumes:
+      - nucleus-data:/data
+    networks:
+       - atom0
+  pibond:
+    image: registry.factory.aptargroup.biz/atom/admin/atom-pibond:1.1.2
+    container_name: atom_pibond_armv7l
+    
+    restart: always
+    environment:
+      - KAFKA_SERVER=172.18.16.81:30735
+      - REDIS=redis://redis:6379
+      - MACHINE_NAME=I2724
+      - MACHINE_TYPE=PRESS
+      - PLANT_ID=1111
+      - PLC_ID=999777
+      - PLC_LINKED=1
+      - PLC_ACK=0
+      - GAPI=http://172.22.172.140:3010
+      - MES=PEV
+      - PLC_IP=opc.tcp://SEIGOPC03.aptargroup.loc:49320
+      - TAG_PREFIX=ns=2;s=I2724.I2724.I2720_I2724.I2724
+      - POLLING_RATE=2000
+      - NUCLEUS_HOST=atom_nucleus
+      - SCRAP_VALUE_FROM_PLC=false
+      - CONSIDER_REJECTED_CAVITIES_FOR_OEE_CALCULATION=0
+      - TEAMS_CHANNEL=d108b20b.aptar.onmicrosoft.com@amer.teams.ms
+      - OEE_MAIL_TRIGGER=SETUP,MAINTENANCE
+      - SKIP_LOGIN=0
+      - KAFKA_ACTIVE=1
+      - NUCLEUS_SOCKETS=http://atom_nucleus:4000
+    depends_on:
+      - redis
+    links:
+      - redis
+
+    command: ["npm", "run-script", "prod"]
+    expose:
+      - 3001
+    ports:
+      - 3001:3001
+    networks:
+      - atom0
+  molecola:
+    image: registry.factory.aptargroup.biz/atom/admin/atom-molecola:1.1.2
+    container_name: atom_molecola_armv7l
+   
+    restart: always
+    environment:
+      - REDIS=redis://redis:6379
+      - MACHINE_NAME=I2724
+      - MACHINE_TYPE=PRESS
+      - PLANT_ID=1111
+      - PLC_ID=999777
+      - PLC_LINKED=1
+      - PLC_ACK=0
+      - GAPI=http://172.22.172.140:3010
+      - MES=PEV
+      - PLC_IP=opc.tcp://SEIGOPC03.aptargroup.loc:49320
+      - TAG_PREFIX=ns=2;s=I2724.I2724.I2720_I2724.I2724
+      - POLLING_RATE=2000
+      - NUCLEUS_HOST=nucleus
+      - SCRAP_VALUE_FROM_PLC=false
+      - CONSIDER_REJECTED_CAVITIES_FOR_OEE_CALCULATION=0
+      - TEAMS_CHANNEL=d108b20b.aptar.onmicrosoft.com@amer.teams.ms
+      - OEE_MAIL_TRIGGER=SETUP,MAINTENANCE
+      - SKIP_LOGIN=0
+      - KAFKA_ACTIVE=1
+      - NUCLEUS_SOCKETS=http://nucleus:4000
+    depends_on:
+      - redis
+      - nucleus
+    links:
+      - redis
+      - nucleus
+    command: ["nginx", "-g", "daemon off;"]
+    expose:
+      - 80
+      - 4200
+    ports:
+      - 4200:80
+    networks:
+      - atom0
+  siemenss7:
+    image: registry.factory.aptargroup.biz/atom/admin/atom-electrons:siemens-s7-1.1.2
+    container_name: atom_siemens_s7_armv7l
+    
+    restart: always
+    environment:
+      - REDIS=redis://redis:6379
+      - MACHINE_NAME=I2724
+      - MACHINE_TYPE=PRESS
+      - PLANT_ID=1111
+      - PLC_ID=999777
+      - PLC_LINKED=1
+      - PLC_ACK=0
+      - GAPI=http://172.22.172.140:3010
+      - MES=PEV
+      - PLC_IP=opc.tcp://SEIGOPC03.aptargroup.loc:49320
+      - TAG_PREFIX=ns=2;s=I2724.I2724.I2720_I2724.I2724
+      - POLLING_RATE=2000
+      - NUCLEUS_HOST=nucleus
+      - SCRAP_VALUE_FROM_PLC=false
+      - CONSIDER_REJECTED_CAVITIES_FOR_OEE_CALCULATION=0
+      - TEAMS_CHANNEL=d108b20b.aptar.onmicrosoft.com@amer.teams.ms
+      - OEE_MAIL_TRIGGER=SETUP,MAINTENANCE
+      - SKIP_LOGIN=0
+      - KAFKA_ACTIVE=1
+      - NUCLEUS_SOCKETS=http://nucleus:4000
+    depends_on:
+      - redis
+      - nucleus
+    links:
+      - redis
+      - nucleus
+    command: ["npm", "run-script", "eig-imm-i2732"]
+    networks:
+      - atom0
+
+volumes:
+  redis-data:
+  nucleus-data:
+
+networks:
+  atom0:
+    driver: bridge
+    
+
